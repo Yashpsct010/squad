@@ -1,0 +1,70 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: 🤖 Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 📦 Install Mobile Dependencies
+        working-directory: mobile
+        run: npm ci --legacy-peer-deps
+
+      - name: 🏗️ Generate Android Native Project (Expo Prebuild)
+        working-directory: mobile
+        run: npx expo prebuild --platform android --clean
+
+      - name: 🔨 Build Standalone APK
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease assembleDebug --no-daemon
+
+      - name: ✍️ Sign Release APK (if unsigned)
+        working-directory: mobile/android
+        run: |
+          if [ -f app/build/outputs/apk/release/app-release-unsigned.apk ] && [ ! -f app/build/outputs/apk/release/app-release.apk ]; then
+            echo "Signing release APK..."
+            keytool -genkey -v -keystore release.keystore -alias squad -keyalg RSA -keysize 2048 -validity 10000 -storepass squadpass123 -keypass squadpass123 -dname "CN=Squad, OU=App, O=Squad, L=SanFrancisco, S=CA, C=US"
+            BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+            $BUILD_TOOLS_DIR/apksigner sign --ks release.keystore --ks-key-alias squad --ks-pass pass:squadpass123 --key-pass pass:squadpass123 --out app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/app-release-unsigned.apk
+          fi
+
+      - name: 📤 Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: squad-ai-accountability-apk
+          path: |
+            mobile/android/app/build/outputs/apk/release/app-release.apk
+            mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: warn
+          retention-days: 14
