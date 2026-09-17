@@ -5,15 +5,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_SERVER_URL_KEY = '@squad_server_url';
 
-// Automatically detect host IP if available from Expo Go, else fallback to local network default
-const hostUri = Constants.expoConfig?.hostUri;
-const defaultHostIp = hostUri ? hostUri.split(':')[0] : '192.168.0.22';
+// Production cloud backend URL on Render
+export const CLOUD_BACKEND_URL = 'https://squad-ai-backend-owgi.onrender.com';
 
-export let API_BASE_URL = `http://${defaultHostIp}:4000`;
+export let API_BASE_URL = CLOUD_BACKEND_URL;
 
 export const apiClient = axios.create({
   baseURL: `${API_BASE_URL}/api`,
-  timeout: 15000,
+  timeout: 20000,
 });
 
 // Load saved custom server URL from storage on startup
