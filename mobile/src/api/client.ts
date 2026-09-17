@@ -12,7 +12,7 @@ export let API_BASE_URL = CLOUD_BACKEND_URL;
 
 export const apiClient = axios.create({
   baseURL: `${API_BASE_URL}/api`,
-  timeout: 20000,
+  timeout: 45000,
 });
 
 // Load saved custom server URL from storage on startup

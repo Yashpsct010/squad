@@ -4,6 +4,7 @@ import { prisma } from '../config/prisma';
 import { evaluateAchievement } from '../services/aiService';
 import { getSocketIO } from '../sockets/chatSocket';
 import { MAX_TOTAL_BATCH_BYTES } from '../services/uploadService';
+import { uploadMediaFile, isCloudinaryConfigured } from '../services/cloudinaryService';
 import { Category } from '@prisma/client';
 
 export const createAchievement = async (req: Request, res: Response): Promise<void> => {
@@ -39,9 +40,21 @@ export const createAchievement = async (req: Request, res: Response): Promise<vo
       }
     }
 
-    const mediaUrls: string[] = files
-      ? files.map((f) => `/uploads/${f.filename}`)
-      : [];
+    let mediaUrls: string[] = [];
+    if (files && files.length > 0) {
+      if (isCloudinaryConfigured()) {
+        try {
+          mediaUrls = await Promise.all(
+            files.map((f) => uploadMediaFile(f.path, 'squad_achievements'))
+          );
+        } catch (uploadError) {
+          console.error('[Achievement] Cloudinary upload failed, using local storage fallback:', uploadError);
+          mediaUrls = files.map((f) => `/uploads/${f.filename}`);
+        }
+      } else {
+        mediaUrls = files.map((f) => `/uploads/${f.filename}`);
+      }
+    }
 
     // Fetch user goals for AI context
     const user = await prisma.user.findUnique({
