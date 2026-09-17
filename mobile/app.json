@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Squad AI Accountability",
+    "slug": "squad-ai-accountability",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.squad.accountability",
+      "usesCleartextTraffic": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c221fc2d-3463-496b-b88e-ea752b5364a4"
+      }
+    },
+    "owner": "yash010",
+    "plugins": [
+      "expo-font"
+    ]
+  }
+}

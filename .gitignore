@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+node_modules/package.json
+package-lock.json.bak
+
+# Environment & Secrets (Crucial: keeps your Neon DB & Gemini API key safe)
+.env
+.env.*
+!.env.example
+
+# Build outputs
+dist/
+build/
+web-build/
+.expo/
+*.tsbuildinfo
+
+# Uploaded user media in backend
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Mobile Android / iOS credentials & keystores
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Logs & temporary files
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# OS & Editor generated files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

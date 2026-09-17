@@ -1,0 +1,136 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum MemberRole {
+  ADMIN
+  MEMBER
+}
+
+enum Category {
+  FITNESS
+  CAREER
+  STUDY
+  DISCIPLINE
+  HEALTH
+  CREATIVE
+  OTHER
+}
+
+enum MessageType {
+  TEXT
+  ACHIEVEMENT_CARD
+  AI_CHART
+  SYSTEM_NOTIFICATION
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  name         String
+  avatarUrl    String?
+  streakDays   Int           @default(0)
+  lastActiveAt DateTime      @default(now())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  memberships  SquadMember[]
+  goals        Goal[]
+  achievements Achievement[]
+  messages     Message[]
+  verifiedAchievements AchievementVerification[]
+}
+
+model Squad {
+  id          String        @id @default(uuid())
+  name        String
+  inviteCode  String        @unique
+  maxMembers  Int           @default(3)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  members     SquadMember[]
+  achievements Achievement[]
+  messages    Message[]
+}
+
+model SquadMember {
+  id        String     @id @default(uuid())
+  squadId   String
+  userId    String
+  role      MemberRole @default(MEMBER)
+  joinedAt  DateTime   @default(now())
+
+  squad     Squad      @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([squadId, userId])
+}
+
+model Goal {
+  id          String    @id @default(uuid())
+  userId      String
+  title       String
+  targetDate  DateTime?
+  completed   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Achievement {
+  id              String         @id @default(uuid())
+  userId          String
+  squadId         String
+  title           String
+  description     String
+  category        Category       @default(DISCIPLINE)
+  timeSpentMin    Int?
+  mediaUrls       String[]       @default([])
+  
+  // AI Evaluation Fields
+  impactScore     Int?           // 1 to 10 scale
+  aiVerdict       String?        // High impact / Meaningful progress / Superficial busywork
+  aiFeedback      String?        // Detailed constructive critique
+  aiRecommendation String?       // Next step action advice
+  isVanityTask    Boolean        @default(false)
+
+  createdAt       DateTime       @default(now())
+
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  squad           Squad          @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  verifications   AchievementVerification[]
+  messages        Message[]
+}
+
+model AchievementVerification {
+  id            String      @id @default(uuid())
+  achievementId String
+  verifierId    String
+  verifiedAt    DateTime    @default(now())
+
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  verifier      User        @relation(fields: [verifierId], references: [id], onDelete: Cascade)
+
+  @@unique([achievementId, verifierId])
+}
+
+model Message {
+  id            String       @id @default(uuid())
+  squadId       String
+  userId        String?      // Nullable for AI Bot responses
+  type          MessageType  @default(TEXT)
+  content       String
+  metadata      Json?        // JSON containing chart data, achievement preview, etc.
+  achievementId String?
+  createdAt     DateTime     @default(now())
+
+  squad         Squad        @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  user          User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  achievement   Achievement? @relation(fields: [achievementId], references: [id], onDelete: SetNull)
+}
